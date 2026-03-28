@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Allow: /community
+Allow: /vet
+Allow: /pet/
+
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /activate/
+Disallow: /notifications/
+Disallow: /points/
+
+Sitemap: https://qollar.vercel.app/sitemap.xml

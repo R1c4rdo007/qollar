@@ -1,26 +1,171 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0F0A1E;
+  --foreground: #F8F4FF;
+  --primary: #FF6B35;
+  --primary-light: #FF8C5A;
+  --secondary: #7C3AED;
+  --secondary-light: #9F67FF;
+  --accent: #10B981;
+  --surface: #1A1230;
+  --surface-2: #241840;
+  --border: rgba(255, 255, 255, 0.08);
+  --text-muted: #9B8FC0;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-muted: var(--text-muted);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 99px;
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, #FF6B35, #9F67FF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass card */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Glow effects */
+.glow-orange {
+  box-shadow: 0 0 30px rgba(255, 107, 53, 0.3);
+}
+
+.glow-purple {
+  box-shadow: 0 0 30px rgba(124, 58, 237, 0.3);
+}
+
+/* Input styles */
+input, textarea, select {
+  outline: none;
+}
+
+/* Smooth transitions */
+* {
+  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Prevent transition on load */
+.no-transition * {
+  transition: none !important;
+}
+
+/* PWA safe area */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ── Sticky header always above scroll content ──────────────────────
+   Problem: backdrop-filter:blur() on .glass creates a stacking context.
+   Both <header> and <main> use Tailwind z-10 (class specificity 0,1,0).
+   A plain `header` rule (element specificity 0,0,1) loses → content
+   painted on top. Fix: `header.glass` specificity (0,1,1) + !important
+   wins over any Tailwind z-* class and makes all glass headers sticky.
+   ─────────────────────────────────────────────────────────────────── */
+header.glass {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 30 !important;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Print styles (used by /admin/plates/generate) ─────────────── */
+.qollar-print-area {
+  display: none;
+}
+
+@media print {
+  /* Hide everything */
+  .no-print,
+  header,
+  nav,
+  footer {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Show only the plates grid */
+  .qollar-print-area {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    padding: 10px;
+    width: 100%;
+  }
+
+  .qollar-print-plate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: white;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Remove all backgrounds and blurs */
+  * {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+  }
 }

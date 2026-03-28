@@ -1,0 +1,20 @@
+{
+  "name": "Qollar - Encuentra a tu mascota",
+  "short_name": "Qollar",
+  "description": "La app para proteger y encontrar a tu mascota perdida",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F0A1E",
+  "theme_color": "#FF6B35",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "utilities"],
+  "lang": "es-PE"
+}
