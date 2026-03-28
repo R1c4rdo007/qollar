@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, QrCode, Tag, Search } from "lucide-react";
+import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, QrCode, Tag, Search, X, Download, Printer } from "lucide-react";
 import Link from "next/link";
+import { QRCodeSVG } from "qrcode.react";
 
 interface Plate {
   id: string;
@@ -18,6 +19,8 @@ interface Plate {
 export default function AdminPlatesClient({ plates }: { plates: Plate[] }) {
   const [filter, setFilter] = useState<"all" | "inactive" | "active">("all");
   const [search, setSearch] = useState("");
+  const [selectedPlate, setSelectedPlate] = useState<Plate | null>(null);
+  const qrWrapperRef = useRef<HTMLDivElement>(null);
 
   const filtered = plates.filter((p) => {
     if (filter !== "all" && p.status !== filter) return false;
@@ -30,6 +33,71 @@ export default function AdminPlatesClient({ plates }: { plates: Plate[] }) {
     active: plates.filter((p) => p.status === "active").length,
     inactive: plates.filter((p) => p.status === "inactive").length,
   };
+
+  function getQrUrl(plateCode: string) {
+    return `${typeof window !== "undefined" ? window.location.origin : "https://qollar-six.vercel.app"}/pet/${plateCode}`;
+  }
+
+  function downloadSVG(plate: Plate) {
+    const svg = qrWrapperRef.current?.querySelector("svg");
+    if (!svg) return;
+
+    // Build a standalone SVG with label
+    const size = 300;
+    const labelHeight = 50;
+    const fullSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size + labelHeight}" viewBox="0 0 ${size} ${size + labelHeight}">
+  <rect width="${size}" height="${size + labelHeight}" fill="white"/>
+  <g transform="translate(25, 25)">
+    ${svg.innerHTML}
+  </g>
+  <text x="${size / 2}" y="${size + 20}" text-anchor="middle" font-family="monospace" font-size="14" fill="#1a1a2e" font-weight="bold">QOLLAR</text>
+  <text x="${size / 2}" y="${size + 40}" text-anchor="middle" font-family="monospace" font-size="11" fill="#444">${plate.plate_code}</text>
+</svg>`;
+
+    const blob = new Blob([fullSvg], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `qollar-${plate.plate_code}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function printPlate(plate: Plate) {
+    const svg = qrWrapperRef.current?.querySelector("svg");
+    if (!svg) return;
+
+    const qrUrl = getQrUrl(plate.plate_code);
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>Plaquita ${plate.plate_code}</title>
+  <style>
+    body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: monospace; background: white; }
+    .plate { border: 2px solid #0F0A1E; border-radius: 16px; padding: 20px; text-align: center; width: 260px; }
+    .brand { font-size: 22px; font-weight: bold; color: #FF6B35; margin-bottom: 4px; letter-spacing: 2px; }
+    .code { font-size: 11px; color: #666; margin-top: 8px; }
+    .url { font-size: 9px; color: #999; margin-top: 4px; word-break: break-all; }
+    svg { display: block; margin: 0 auto; }
+    @media print { @page { margin: 10mm; } }
+  </style>
+</head>
+<body>
+  <div class="plate">
+    <div class="brand">🐾 QOLLAR</div>
+    <div>${svg.outerHTML}</div>
+    <div class="code">${plate.plate_code}</div>
+    <div class="url">${qrUrl}</div>
+  </div>
+  <script>window.onload = () => { window.print(); window.close(); }</script>
+</body>
+</html>`);
+    printWindow.document.close();
+  }
 
   return (
     <div className="min-h-screen">
@@ -89,8 +157,14 @@ export default function AdminPlatesClient({ plates }: { plates: Plate[] }) {
         {/* Plates list */}
         <div className="space-y-3">
           {filtered.map((plate, i) => (
-            <motion.div key={plate.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
-              className="glass rounded-2xl p-4 flex items-center gap-4">
+            <motion.div
+              key={plate.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.02 }}
+              onClick={() => setSelectedPlate(plate)}
+              className="glass rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:bg-white/5 transition-colors"
+            >
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${plate.status === "active" ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-[#9B8FC0]"}`}>
                 {plate.status === "active" ? <QrCode size={18} /> : <Tag size={18} />}
               </div>
@@ -118,6 +192,79 @@ export default function AdminPlatesClient({ plates }: { plates: Plate[] }) {
           )}
         </div>
       </main>
+
+      {/* Plate detail modal */}
+      <AnimatePresence>
+        {selectedPlate && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedPlate(null)}
+              className="fixed inset-0 z-40 bg-black/70"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 60, scale: 0.95 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed inset-x-4 bottom-4 z-50 max-w-sm mx-auto glass rounded-3xl p-6 border border-white/10"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <p className="font-bold text-white font-mono">{selectedPlate.plate_code}</p>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${selectedPlate.status === "active" ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-[#9B8FC0]"}`}>
+                    {selectedPlate.status === "active" ? "Activa" : "Virgen"}
+                  </span>
+                  {selectedPlate.pet && (
+                    <span className="ml-2 text-xs text-[#9B8FC0]">
+                      {selectedPlate.pet.name} {selectedPlate.pet.species === "dog" ? "🐶" : "🐱"}
+                    </span>
+                  )}
+                </div>
+                <button onClick={() => setSelectedPlate(null)} className="p-2 rounded-xl bg-white/5 text-[#9B8FC0] hover:text-white">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* QR Code */}
+              <div className="flex justify-center mb-5">
+                <div ref={qrWrapperRef} className="bg-white rounded-2xl p-4">
+                  <QRCodeSVG
+                    value={getQrUrl(selectedPlate.plate_code)}
+                    size={200}
+                    level="M"
+                    marginSize={0}
+                  />
+                </div>
+              </div>
+
+              <p className="text-center text-xs text-[#9B8FC0] mb-5 break-all">
+                {getQrUrl(selectedPlate.plate_code)}
+              </p>
+
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => downloadSVG(selectedPlate)}
+                  className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#7C3AED]/20 text-[#A78BFA] text-sm font-medium hover:bg-[#7C3AED]/30 transition-colors"
+                >
+                  <Download size={16} />
+                  Descargar SVG
+                </button>
+                <button
+                  onClick={() => printPlate(selectedPlate)}
+                  className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#FF6B35]/20 text-[#FF6B35] text-sm font-medium hover:bg-[#FF6B35]/30 transition-colors"
+                >
+                  <Printer size={16} />
+                  Imprimir / PDF
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

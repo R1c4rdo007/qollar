@@ -5,13 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Upload, X, ChevronLeft, ChevronRight,
   Plus, Trash2, CheckCircle2, Circle, Syringe, Heart,
-  Camera, FileText, PawPrint
+  Camera, FileText, PawPrint, QrCode, CheckCircle, ArrowRight
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import QRScanner from "@/components/QRScanner";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { v4 as uuidv4 } from "uuid";
@@ -55,6 +56,9 @@ export default function PetForm({ userId }: PetFormProps) {
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [vaccines, setVaccines] = useState<VaccineEntry[]>([]);
+  const [createdPet, setCreatedPet] = useState<{ id: string; name: string } | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
+  const [linkingPlate, setLinkingPlate] = useState(false);
 
   const [form, setForm] = useState({
     // Básico
@@ -194,14 +198,69 @@ export default function PetForm({ userId }: PetFormProps) {
         p_reference_id: null,
       });
 
-      toast.success(`¡${form.name} fue registrado con éxito! +20 puntos 🎉`);
-      router.push("/dashboard");
-      router.refresh();
+      // Show success + plate linking screen
+      setCreatedPet({ id: newPet.id, name: form.name.trim() });
     } catch {
       toast.error("Hubo un error al guardar. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handlePlateScanned(qrValue: string) {
+    setShowScanner(false);
+    if (!createdPet) return;
+
+    // Extract plate code from Qollar QR URL or raw code
+    let plateCode = qrValue.trim();
+    if (qrValue.includes("/pet/")) {
+      plateCode = qrValue.split("/pet/")[1].split("?")[0].trim();
+    }
+
+    if (!plateCode) {
+      toast.error("QR inválido, intenta de nuevo");
+      return;
+    }
+
+    setLinkingPlate(true);
+    const supabase = createClient();
+
+    const { data: plate, error: findError } = await supabase
+      .from("qr_plates")
+      .select("id, status")
+      .eq("plate_code", plateCode)
+      .single();
+
+    if (findError || !plate) {
+      toast.error("Plaquita no encontrada. Verifica el código.");
+      setLinkingPlate(false);
+      return;
+    }
+
+    if (plate.status === "active") {
+      toast.error("Esta plaquita ya está vinculada a otra mascota.");
+      setLinkingPlate(false);
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("qr_plates")
+      .update({
+        pet_id: createdPet.id,
+        status: "active",
+        activated_at: new Date().toISOString(),
+      })
+      .eq("id", plate.id);
+
+    if (updateError) {
+      toast.error("Error al vincular la plaquita. Intenta de nuevo.");
+      setLinkingPlate(false);
+      return;
+    }
+
+    toast.success(`¡Plaquita vinculada a ${createdPet.name}! 🎉`);
+    router.push("/dashboard");
+    router.refresh();
   }
 
   const ToggleSwitch = ({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) => (
@@ -216,6 +275,77 @@ export default function PetForm({ userId }: PetFormProps) {
       </button>
     </div>
   );
+
+  // QR Scanner overlay
+  if (showScanner) {
+    return (
+      <QRScanner
+        onScan={handlePlateScanned}
+        onClose={() => setShowScanner(false)}
+      />
+    );
+  }
+
+  // Post-creation success screen
+  if (createdPet) {
+    return (
+      <div className="min-h-screen relative z-10 flex flex-col items-center justify-center px-6 py-12">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-sm text-center"
+        >
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.1, type: "spring", damping: 15 }}
+            className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6"
+          >
+            <CheckCircle size={40} className="text-emerald-400" />
+          </motion.div>
+
+          <h1 className="text-2xl font-black text-white mb-2">
+            ¡{createdPet.name} fue registrado!
+          </h1>
+          <p className="text-[#9B8FC0] mb-2">+20 puntos ganados 🎉</p>
+          <p className="text-[#9B8FC0] text-sm mb-8">
+            Ya tienes el perfil de tu mascota listo. Ahora puedes vincularle una plaquita QR física.
+          </p>
+
+          <div className="glass rounded-3xl p-5 mb-4 text-left">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FF6B35]/15 flex items-center justify-center">
+                <QrCode size={20} className="text-[#FF6B35]" />
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm">Vincular plaquita QR</p>
+                <p className="text-[#9B8FC0] text-xs">Escanea el QR de la plaquita física</p>
+              </div>
+            </div>
+            <p className="text-[#9B8FC0] text-xs mb-4">
+              Si tienes una plaquita Qollar, escanea el código QR ahora para vincularla a {createdPet.name}. Cualquier persona que la encuentre podrá contactarte al instante.
+            </p>
+            <Button
+              fullWidth
+              onClick={() => setShowScanner(true)}
+              loading={linkingPlate}
+            >
+              <QrCode size={16} />
+              Escanear y vincular plaquita
+            </Button>
+          </div>
+
+          <button
+            onClick={() => { router.push("/dashboard"); router.refresh(); }}
+            className="w-full flex items-center justify-center gap-2 py-3 text-[#9B8FC0] hover:text-white text-sm transition-colors"
+          >
+            Saltar por ahora
+            <ArrowRight size={14} />
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative z-10">
