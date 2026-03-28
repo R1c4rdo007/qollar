@@ -19,6 +19,16 @@ export default async function ActivatePage({
     .eq("plate_code", code)
     .single();
 
+  // Already active → redirect to the pet's public page (no activation UI needed)
+  if (plate?.status === "active" && plate?.pet_id) {
+    const { data: pet } = await supabase
+      .from("pets")
+      .select("qr_id")
+      .eq("id", plate.pet_id)
+      .single();
+    if (pet?.qr_id) redirect(`/pet/${pet.qr_id}`);
+  }
+
   const { data: pets } = await supabase
     .from("pets")
     .select("id, name, species, photos")

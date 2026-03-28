@@ -2,9 +2,11 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, QrCode, Tag, Search, X, Download, Printer } from "lucide-react";
+import { ArrowLeft, QrCode, Tag, Search, X, Download, Printer, Trash2, Unlink } from "lucide-react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
+import { createClient } from "@/lib/supabase/client";
+import toast from "react-hot-toast";
 
 interface Plate {
   id: string;
@@ -16,10 +18,12 @@ interface Plate {
   pet: { id: string; name: string; species: string } | null;
 }
 
-export default function AdminPlatesClient({ plates }: { plates: Plate[] }) {
+export default function AdminPlatesClient({ plates: initialPlates }: { plates: Plate[] }) {
+  const [plates, setPlates] = useState<Plate[]>(initialPlates);
   const [filter, setFilter] = useState<"all" | "inactive" | "active">("all");
   const [search, setSearch] = useState("");
   const [selectedPlate, setSelectedPlate] = useState<Plate | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const qrWrapperRef = useRef<HTMLDivElement>(null);
 
   const filtered = plates.filter((p) => {
@@ -35,7 +39,45 @@ export default function AdminPlatesClient({ plates }: { plates: Plate[] }) {
   };
 
   function getQrUrl(plateCode: string) {
-    return `${typeof window !== "undefined" ? window.location.origin : "https://qollar-six.vercel.app"}/pet/${plateCode}`;
+    return `${typeof window !== "undefined" ? window.location.origin : "https://qollar-six.vercel.app"}/activate/${plateCode}`;
+  }
+
+  async function handleUnlink(plate: Plate) {
+    if (!confirm(`¿Desvincular la plaquita ${plate.plate_code} de ${plate.pet?.name}? Quedará disponible nuevamente.`)) return;
+    setActionLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.from("qr_plates").update({
+      pet_id: null,
+      status: "inactive",
+      activated_at: null,
+    }).eq("id", plate.id);
+    if (error) {
+      toast.error("Error al desvincular");
+    } else {
+      toast.success("Plaquita desvinculada");
+      setPlates((prev) => prev.map((p) => p.id === plate.id ? { ...p, status: "inactive", pet: null, activated_at: null } : p));
+      setSelectedPlate(null);
+    }
+    setActionLoading(false);
+  }
+
+  async function handleDelete(plate: Plate) {
+    if (plate.status === "active") {
+      toast.error("Primero desvincúlala antes de eliminarla");
+      return;
+    }
+    if (!confirm(`¿Eliminar permanentemente la plaquita ${plate.plate_code}? Esta acción no se puede deshacer.`)) return;
+    setActionLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.from("qr_plates").delete().eq("id", plate.id);
+    if (error) {
+      toast.error("Error al eliminar");
+    } else {
+      toast.success("Plaquita eliminada");
+      setPlates((prev) => prev.filter((p) => p.id !== plate.id));
+      setSelectedPlate(null);
+    }
+    setActionLoading(false);
   }
 
   function downloadSVG(plate: Plate) {
@@ -260,6 +302,35 @@ export default function AdminPlatesClient({ plates }: { plates: Plate[] }) {
                   <Printer size={16} />
                   Imprimir / PDF
                 </button>
+              </div>
+
+              {/* Danger zone */}
+              <div className="mt-3 pt-3 border-t border-white/5 flex gap-3">
+                {selectedPlate.status === "active" && (
+                  <button
+                    onClick={() => handleUnlink(selectedPlate)}
+                    disabled={actionLoading}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-amber-500/10 text-amber-400 text-sm font-medium hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
+                  >
+                    <Unlink size={15} />
+                    Desvincular
+                  </button>
+                )}
+                {selectedPlate.status === "inactive" && (
+                  <button
+                    onClick={() => handleDelete(selectedPlate)}
+                    disabled={actionLoading}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+                  >
+                    <Trash2 size={15} />
+                    Eliminar plaquita
+                  </button>
+                )}
+                {selectedPlate.status === "active" && (
+                  <p className="flex-1 text-xs text-[#9B8FC0]/60 text-center self-center">
+                    Desvincula primero para poder eliminar
+                  </p>
+                )}
               </div>
             </motion.div>
           </>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Download, Share2, MapPin, Clock, Trash2, Pencil,
-  Syringe, Heart, CheckCircle2, Circle, Phone, MapPinned
+  Syringe, Heart, CheckCircle2, Circle, Phone, MapPinned, QrCode, Unlink
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,12 +20,14 @@ interface Props {
   pet: Pet;
   scanEvents: ScanEvent[];
   vaccines: Vaccine[];
+  linkedPlate: { id: string; plate_code: string } | null;
 }
 
-export default function PetDetailClient({ pet, scanEvents, vaccines: initialVaccines }: Props) {
+export default function PetDetailClient({ pet, scanEvents, vaccines: initialVaccines, linkedPlate }: Props) {
   const router = useRouter();
   const petUrl = getPetUrl(pet.qr_id);
   const [vaccines, setVaccines] = useState<Vaccine[]>(initialVaccines);
+  const [unlinkLoading, setUnlinkLoading] = useState(false);
 
   async function handleDelete() {
     if (!confirm(`¿Estás seguro de eliminar a ${pet.name}? Esta acción no se puede deshacer.`)) return;
@@ -71,6 +73,25 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
     };
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
     toast.success("QR descargado");
+  }
+
+  async function handleUnlinkPlate() {
+    if (!linkedPlate) return;
+    if (!confirm(`¿Desvincular la plaquita ${linkedPlate.plate_code} de ${pet.name}? La plaquita física quedará disponible nuevamente.`)) return;
+    setUnlinkLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.from("qr_plates").update({
+      pet_id: null,
+      status: "inactive",
+      activated_at: null,
+    }).eq("id", linkedPlate.id);
+    if (error) {
+      toast.error("No se pudo desvincular la plaquita");
+    } else {
+      toast.success("Plaquita desvinculada. Puedes vincular otra cuando quieras.");
+      router.refresh();
+    }
+    setUnlinkLoading(false);
   }
 
   async function toggleVaccineGiven(vaccine: Vaccine) {
@@ -224,6 +245,37 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
                 Editar información
               </Button>
             </Link>
+
+            {/* Linked plate */}
+            {linkedPlate ? (
+              <div className="glass rounded-2xl p-4 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                  <QrCode size={16} className="text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-[#9B8FC0]">Plaquita física vinculada</p>
+                  <p className="text-sm font-mono font-semibold text-white truncate">{linkedPlate.plate_code}</p>
+                </div>
+                <button
+                  onClick={handleUnlinkPlate}
+                  disabled={unlinkLoading}
+                  className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 disabled:opacity-50 shrink-0"
+                >
+                  <Unlink size={13} />
+                  Desvincular
+                </button>
+              </div>
+            ) : (
+              <div className="glass rounded-2xl p-4 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
+                  <QrCode size={16} className="text-[#9B8FC0]" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-[#9B8FC0]">Sin plaquita física vinculada</p>
+                  <p className="text-xs text-[#9B8FC0]/60">Escanea el QR de una plaquita para vincularla</p>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
 

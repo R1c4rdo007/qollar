@@ -206,7 +206,7 @@ export default function DashboardClient({ pets, profile, user, unreadCount }: Pr
       </main>
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 glass border-t border-white/5 px-6 py-3 safe-bottom">
+      <nav className="bottom-nav glass border-t border-white/5 px-6 py-3 safe-bottom">
         <div className="max-w-md mx-auto flex items-center justify-around">
           <Link href="/dashboard" className="flex flex-col items-center gap-1 text-[#FF6B35]">
             <span className="text-lg">🐾</span>

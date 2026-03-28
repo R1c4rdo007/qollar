@@ -63,27 +63,8 @@ export default function ActivateClient({ plateCode, plate, pets, userId }: Props
     );
   }
 
-  // Already active and linked to another user
-  if (plate.status === "active" && plate.pet_id) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-6">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="glass rounded-3xl p-8 text-center max-w-sm w-full"
-        >
-          <CheckCircle2 size={48} className="text-[#10B981] mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-white mb-2">Plaquita ya activada</h1>
-          <p className="text-[#9B8FC0] text-sm mb-6">
-            Esta plaquita ya está vinculada a una mascota registrada en Qollar.
-          </p>
-          <Link href="/dashboard">
-            <Button fullWidth>Ir a mi dashboard</Button>
-          </Link>
-        </motion.div>
-      </div>
-    );
-  }
+  // Active plates are handled server-side (redirect to /pet/[qr_id])
+  // This state should not be reached normally
 
   async function handleActivate() {
     if (!selectedPetId) {
@@ -105,15 +86,6 @@ export default function ActivateClient({ plateCode, plate, pets, userId }: Props
         .eq("plate_code", plateCode);
 
       if (plateError) throw plateError;
-
-      // Update pet's qr_id to the plate code
-      const { error: petError } = await supabase
-        .from("pets")
-        .update({ qr_id: plateCode })
-        .eq("id", selectedPetId)
-        .eq("owner_id", userId);
-
-      if (petError) throw petError;
 
       // Award points for activation
       await supabase.rpc("award_points", {
