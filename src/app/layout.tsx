@@ -69,7 +69,8 @@ export default function RootLayout({
   return (
     <html lang="es" className="h-full antialiased">
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon.svg" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="icon" href="/icons/icon-192.png" type="image/png" />
         <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />

@@ -1,18 +1,30 @@
 {
-  "name": "Qollar - Encuentra a tu mascota",
+  "name": "Qollar - Protege a tu mascota",
   "short_name": "Qollar",
-  "description": "La app para proteger y encontrar a tu mascota perdida",
-  "start_url": "/",
+  "description": "La app para proteger y encontrar a tu mascota perdida con QR inteligente",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0F0A1E",
   "theme_color": "#FF6B35",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "categories": ["lifestyle", "utilities"],
