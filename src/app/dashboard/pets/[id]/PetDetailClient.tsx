@@ -4,13 +4,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Download, Share2, MapPin, Clock, Trash2, Pencil,
-  Syringe, Heart, CheckCircle2, Circle, Phone, MapPinned, QrCode, Unlink
+  Syringe, Heart, CheckCircle2, Circle, Phone, MapPinned, QrCode, Unlink, Tag
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { Pet, ScanEvent, Vaccine } from "@/types";
-import { getPetUrl } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import Button from "@/components/ui/Button";
 import toast from "react-hot-toast";
@@ -25,7 +24,9 @@ interface Props {
 
 export default function PetDetailClient({ pet, scanEvents, vaccines: initialVaccines, linkedPlate }: Props) {
   const router = useRouter();
-  const petUrl = getPetUrl(pet.qr_id);
+  const plateUrl = linkedPlate
+    ? `${typeof window !== "undefined" ? window.location.origin : "https://qollar-six.vercel.app"}/activate/${linkedPlate.plate_code}`
+    : null;
   const [vaccines, setVaccines] = useState<Vaccine[]>(initialVaccines);
   const [unlinkLoading, setUnlinkLoading] = useState(false);
 
@@ -44,13 +45,11 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
   }
 
   function handleShare() {
+    const url = plateUrl || window.location.href;
     if (navigator.share) {
-      navigator.share({
-        title: `Perfil de ${pet.name} - Qollar`,
-        url: petUrl,
-      });
+      navigator.share({ title: `Perfil de ${pet.name} - Qollar`, url });
     } else {
-      navigator.clipboard.writeText(petUrl);
+      navigator.clipboard.writeText(url);
       toast.success("Enlace copiado al portapapeles");
     }
   }
@@ -67,7 +66,7 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
     img.onload = () => {
       ctx?.drawImage(img, 0, 0, 400, 400);
       const a = document.createElement("a");
-      a.download = `qollar-${pet.name}-${pet.qr_id}.png`;
+      a.download = `qollar-${pet.name}-${linkedPlate?.plate_code || "qr"}.png`;
       a.href = canvas.toDataURL("image/png");
       a.click();
     };
@@ -128,7 +127,7 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
           </Link>
           <div className="flex-1">
             <h1 className="font-bold text-white">{pet.name}</h1>
-            <p className="text-xs text-[#9B8FC0]">ID: {pet.qr_id}</p>
+            {linkedPlate && <p className="text-xs text-[#9B8FC0] font-mono">{linkedPlate.plate_code}</p>}
           </div>
           <div className="flex gap-2">
             <button
@@ -153,29 +152,50 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass rounded-3xl p-6 text-center glow-orange"
+            className={`glass rounded-3xl p-6 text-center ${linkedPlate ? "glow-orange" : ""}`}
           >
-            <h2 className="text-sm font-medium text-[#9B8FC0] mb-4">Código QR de {pet.name}</h2>
-            <div className="bg-white rounded-2xl p-4 inline-block mb-4">
-              <QRCodeSVG
-                id="pet-qr-svg"
-                value={petUrl}
-                size={200}
-                level="H"
-                includeMargin={false}
-              />
-            </div>
-            <p className="text-xs text-[#9B8FC0] mb-4 break-all font-mono">{petUrl}</p>
-            <div className="flex gap-3">
-              <Button onClick={handleDownloadQR} variant="ghost" size="sm" fullWidth>
-                <Download size={14} />
-                Descargar QR
-              </Button>
-              <Button onClick={handleShare} variant="secondary" size="sm" fullWidth>
-                <Share2 size={14} />
-                Compartir
-              </Button>
-            </div>
+            {linkedPlate && plateUrl ? (
+              <>
+                <h2 className="text-sm font-medium text-[#9B8FC0] mb-1">QR de {pet.name}</h2>
+                <p className="text-xs font-mono text-[#FF6B35] mb-4">{linkedPlate.plate_code}</p>
+                <div className="bg-white rounded-2xl p-4 inline-block mb-4">
+                  <QRCodeSVG
+                    id="pet-qr-svg"
+                    value={plateUrl}
+                    size={200}
+                    level="H"
+                    includeMargin={false}
+                  />
+                </div>
+                <p className="text-xs text-[#9B8FC0] mb-4 break-all font-mono">{plateUrl}</p>
+                <div className="flex gap-3">
+                  <Button onClick={handleDownloadQR} variant="ghost" size="sm" fullWidth>
+                    <Download size={14} />
+                    Descargar QR
+                  </Button>
+                  <Button onClick={handleShare} variant="secondary" size="sm" fullWidth>
+                    <Share2 size={14} />
+                    Compartir
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+                  <Tag size={28} className="text-[#9B8FC0]" />
+                </div>
+                <h2 className="font-semibold text-white mb-2">Sin plaquita vinculada</h2>
+                <p className="text-xs text-[#9B8FC0] mb-5">
+                  Vincula una plaquita QR física para que cualquier persona pueda contactarte si encuentra a {pet.name}.
+                </p>
+                <Link href="/dashboard">
+                  <Button variant="secondary" size="sm" fullWidth>
+                    <QrCode size={14} />
+                    Ir a Mis mascotas para vincular
+                  </Button>
+                </Link>
+              </>
+            )}
           </motion.div>
 
           {/* Pet info */}
@@ -246,35 +266,15 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
               </Button>
             </Link>
 
-            {/* Linked plate */}
-            {linkedPlate ? (
-              <div className="glass rounded-2xl p-4 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                  <QrCode size={16} className="text-emerald-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-[#9B8FC0]">Plaquita física vinculada</p>
-                  <p className="text-sm font-mono font-semibold text-white truncate">{linkedPlate.plate_code}</p>
-                </div>
-                <button
-                  onClick={handleUnlinkPlate}
-                  disabled={unlinkLoading}
-                  className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 disabled:opacity-50 shrink-0"
-                >
-                  <Unlink size={13} />
-                  Desvincular
-                </button>
-              </div>
-            ) : (
-              <div className="glass rounded-2xl p-4 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0">
-                  <QrCode size={16} className="text-[#9B8FC0]" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-[#9B8FC0]">Sin plaquita física vinculada</p>
-                  <p className="text-xs text-[#9B8FC0]/60">Escanea el QR de una plaquita para vincularla</p>
-                </div>
-              </div>
+            {linkedPlate && (
+              <button
+                onClick={handleUnlinkPlate}
+                disabled={unlinkLoading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-amber-500/8 border border-amber-500/15 text-amber-400 text-sm hover:bg-amber-500/15 disabled:opacity-50 transition-colors"
+              >
+                <Unlink size={14} />
+                Desvincular plaquita {linkedPlate.plate_code}
+              </button>
             )}
           </motion.div>
         </div>

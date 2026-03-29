@@ -9,6 +9,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { POINTS } from "@/lib/config";
 import Button from "@/components/ui/Button";
+import PwaOpenBanner from "@/components/PwaOpenBanner";
 import toast from "react-hot-toast";
 
 interface Pet {
@@ -105,7 +106,7 @@ export default function ActivateClient({ plateCode, plate, pets, userId }: Props
       });
 
       toast.success("¡Plaquita activada correctamente!");
-      router.push(`/dashboard/pets/${selectedPetId}`);
+      router.push(`/pet/${plateCode}`);
       router.refresh();
     } catch {
       toast.error("Error al activar la plaquita. Intenta de nuevo.");
@@ -114,8 +115,11 @@ export default function ActivateClient({ plateCode, plate, pets, userId }: Props
     }
   }
 
+  const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+
   return (
     <main className="min-h-screen relative overflow-hidden">
+      <PwaOpenBanner targetUrl={currentUrl} />
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-orange-600/15 blur-[100px]" />
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] rounded-full bg-purple-700/15 blur-[100px]" />

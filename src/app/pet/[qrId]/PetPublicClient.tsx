@@ -16,6 +16,7 @@ import { Pet } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import { getWhatsAppUrl, formatPhone } from "@/lib/utils";
 import Button from "@/components/ui/Button";
+import PwaOpenBanner from "@/components/PwaOpenBanner";
 import Image from "next/image";
 import toast from "react-hot-toast";
 
@@ -126,8 +127,11 @@ export default function PetPublicClient({ pet }: Props) {
       )
     : null;
 
+  const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+
   return (
     <main className="min-h-screen relative overflow-hidden">
+      <PwaOpenBanner targetUrl={currentUrl} />
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-purple-700/20 blur-[120px]" />

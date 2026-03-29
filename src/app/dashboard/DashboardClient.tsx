@@ -107,7 +107,7 @@ export default function DashboardClient({ pets, profile, user, unreadCount }: Pr
 
       <main className="relative max-w-5xl mx-auto px-6 py-8">
         {/* Welcome + points mobile */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }} className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">Mis mascotas</h1>
             <p className="text-[#9B8FC0] text-sm mt-1">
@@ -126,7 +126,7 @@ export default function DashboardClient({ pets, profile, user, unreadCount }: Pr
         </motion.div>
 
         {/* Quick nav cards */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-3 gap-3 mb-8">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, delay: 0.05 }} className="grid grid-cols-3 gap-3 mb-8">
           {NAV.map((item) => (
             <Link key={item.href} href={item.href}>
               <div className="glass rounded-2xl p-4 text-center hover:bg-white/8 group cursor-pointer">
@@ -158,7 +158,7 @@ export default function DashboardClient({ pets, profile, user, unreadCount }: Pr
               key={pet.id}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
+              transition={{ duration: 0.2, delay: i * 0.04 }}
               className="glass rounded-3xl overflow-hidden group hover:bg-white/8"
             >
               <div className="relative h-48 bg-gradient-to-br from-[#241840] to-[#1A1230]">
@@ -183,7 +183,6 @@ export default function DashboardClient({ pets, profile, user, unreadCount }: Pr
                       {pet.age ? ` · ${pet.age} año${pet.age !== 1 ? "s" : ""}` : ""}
                     </p>
                   </div>
-                  <span className="text-xs bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[#9B8FC0] font-mono">{pet.qr_id}</span>
                 </div>
 
                 <div className="flex gap-2 mt-4">

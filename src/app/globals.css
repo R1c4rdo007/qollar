@@ -133,6 +133,17 @@ button, a, [role="button"], input, textarea, select {
   }
 }
 
+/* CSS containment — tells the browser each card is self-contained,
+   enabling layout/paint optimizations inside scroll containers */
+.glass {
+  contain: layout style;
+}
+
+/* Scrolling containers should use GPU layers */
+main, [data-scroll] {
+  -webkit-overflow-scrolling: touch;
+}
+
 /* PWA safe area */
 .safe-top {
   padding-top: env(safe-area-inset-top);
