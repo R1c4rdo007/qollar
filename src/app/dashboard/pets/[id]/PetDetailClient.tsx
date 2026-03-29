@@ -15,20 +15,26 @@ import Button from "@/components/ui/Button";
 import toast from "react-hot-toast";
 import Image from "next/image";
 
+interface LinkedPlate {
+  id: string;
+  plate_code: string;
+  status: string;
+}
+
 interface Props {
   pet: Pet;
   scanEvents: ScanEvent[];
   vaccines: Vaccine[];
-  linkedPlate: { id: string; plate_code: string } | null;
+  linkedPlates: LinkedPlate[];
 }
 
-export default function PetDetailClient({ pet, scanEvents, vaccines: initialVaccines, linkedPlate }: Props) {
+export default function PetDetailClient({ pet, scanEvents, vaccines: initialVaccines, linkedPlates: initialPlates }: Props) {
   const router = useRouter();
-  const plateUrl = linkedPlate
-    ? `${typeof window !== "undefined" ? window.location.origin : "https://qollar-six.vercel.app"}/activate/${linkedPlate.plate_code}`
-    : null;
   const [vaccines, setVaccines] = useState<Vaccine[]>(initialVaccines);
-  const [unlinkLoading, setUnlinkLoading] = useState(false);
+  const [linkedPlates, setLinkedPlates] = useState<LinkedPlate[]>(initialPlates);
+  const [unlinkLoading, setUnlinkLoading] = useState<string | null>(null);
+  const appOrigin = typeof window !== "undefined" ? window.location.origin : "https://qollar-six.vercel.app";
+  const primaryPlate = linkedPlates[0] ?? null;
 
   async function handleDelete() {
     if (!confirm(`¿Estás seguro de eliminar a ${pet.name}? Esta acción no se puede deshacer.`)) return;
@@ -45,7 +51,7 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
   }
 
   function handleShare() {
-    const url = plateUrl || window.location.href;
+    const url = primaryPlate ? `${appOrigin}/activate/${primaryPlate.plate_code}` : window.location.href;
     if (navigator.share) {
       navigator.share({ title: `Perfil de ${pet.name} - Qollar`, url });
     } else {
@@ -66,7 +72,7 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
     img.onload = () => {
       ctx?.drawImage(img, 0, 0, 400, 400);
       const a = document.createElement("a");
-      a.download = `qollar-${pet.name}-${linkedPlate?.plate_code || "qr"}.png`;
+      a.download = `qollar-${pet.name}-${primaryPlate?.plate_code || "qr"}.png`;
       a.href = canvas.toDataURL("image/png");
       a.click();
     };
@@ -74,23 +80,22 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
     toast.success("QR descargado");
   }
 
-  async function handleUnlinkPlate() {
-    if (!linkedPlate) return;
-    if (!confirm(`¿Desvincular la plaquita ${linkedPlate.plate_code} de ${pet.name}? La plaquita física quedará disponible nuevamente.`)) return;
-    setUnlinkLoading(true);
+  async function handleUnlinkPlate(plate: LinkedPlate) {
+    if (!confirm(`¿Desvincular la plaquita ${plate.plate_code} de ${pet.name}?`)) return;
+    setUnlinkLoading(plate.id);
     const supabase = createClient();
     const { error } = await supabase.from("qr_plates").update({
       pet_id: null,
       status: "inactive",
       activated_at: null,
-    }).eq("id", linkedPlate.id);
+    }).eq("id", plate.id);
     if (error) {
       toast.error("No se pudo desvincular la plaquita");
     } else {
-      toast.success("Plaquita desvinculada. Puedes vincular otra cuando quieras.");
-      router.refresh();
+      toast.success("Plaquita desvinculada");
+      setLinkedPlates((prev) => prev.filter((p) => p.id !== plate.id));
     }
-    setUnlinkLoading(false);
+    setUnlinkLoading(null);
   }
 
   async function toggleVaccineGiven(vaccine: Vaccine) {
@@ -127,7 +132,7 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
           </Link>
           <div className="flex-1">
             <h1 className="font-bold text-white">{pet.name}</h1>
-            {linkedPlate && <p className="text-xs text-[#9B8FC0] font-mono">{linkedPlate.plate_code}</p>}
+            {primaryPlate && <p className="text-xs text-[#9B8FC0] font-mono">{primaryPlate.plate_code}</p>}
           </div>
           <div className="flex gap-2">
             <button
@@ -150,24 +155,27 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* QR Card */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`glass rounded-3xl p-6 text-center ${linkedPlate ? "glow-orange" : ""}`}
+            transition={{ duration: 0.18 }}
+            className={`glass rounded-3xl p-6 text-center ${primaryPlate ? "glow-orange" : ""}`}
           >
-            {linkedPlate && plateUrl ? (
+            {primaryPlate ? (
               <>
                 <h2 className="text-sm font-medium text-[#9B8FC0] mb-1">QR de {pet.name}</h2>
-                <p className="text-xs font-mono text-[#FF6B35] mb-4">{linkedPlate.plate_code}</p>
+                <p className="text-xs font-mono text-[#FF6B35] mb-4">{primaryPlate.plate_code}</p>
                 <div className="bg-white rounded-2xl p-4 inline-block mb-4">
                   <QRCodeSVG
                     id="pet-qr-svg"
-                    value={plateUrl}
+                    value={`${appOrigin}/activate/${primaryPlate.plate_code}`}
                     size={200}
                     level="H"
                     includeMargin={false}
                   />
                 </div>
-                <p className="text-xs text-[#9B8FC0] mb-4 break-all font-mono">{plateUrl}</p>
+                <p className="text-xs text-[#9B8FC0] mb-4 break-all font-mono">
+                  {appOrigin}/activate/{primaryPlate.plate_code}
+                </p>
                 <div className="flex gap-3">
                   <Button onClick={handleDownloadQR} variant="ghost" size="sm" fullWidth>
                     <Download size={14} />
@@ -197,6 +205,36 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
               </>
             )}
           </motion.div>
+
+          {/* All linked plates list */}
+          {linkedPlates.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, delay: 0.05 }}
+              className="glass rounded-3xl p-5 space-y-2"
+            >
+              <h3 className="text-xs font-semibold text-[#9B8FC0] uppercase tracking-wide mb-3">
+                Plaquitas vinculadas ({linkedPlates.length})
+              </h3>
+              {linkedPlates.map((plate) => (
+                <div key={plate.id} className="flex items-center gap-3 bg-white/3 rounded-2xl px-4 py-3">
+                  <QrCode size={15} className={plate.status === "active" ? "text-emerald-400" : "text-[#9B8FC0]"} />
+                  <span className="text-sm font-mono text-white flex-1">{plate.plate_code}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${plate.status === "active" ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-[#9B8FC0]"}`}>
+                    {plate.status === "active" ? "Activa" : "Virgen"}
+                  </span>
+                  <button
+                    onClick={() => handleUnlinkPlate(plate)}
+                    disabled={unlinkLoading === plate.id}
+                    className="text-[#9B8FC0] hover:text-amber-400 disabled:opacity-40 transition-colors"
+                  >
+                    <Unlink size={14} />
+                  </button>
+                </div>
+              ))}
+            </motion.div>
+          )}
 
           {/* Pet info */}
           <motion.div
@@ -266,16 +304,6 @@ export default function PetDetailClient({ pet, scanEvents, vaccines: initialVacc
               </Button>
             </Link>
 
-            {linkedPlate && (
-              <button
-                onClick={handleUnlinkPlate}
-                disabled={unlinkLoading}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-amber-500/8 border border-amber-500/15 text-amber-400 text-sm hover:bg-amber-500/15 disabled:opacity-50 transition-colors"
-              >
-                <Unlink size={14} />
-                Desvincular plaquita {linkedPlate.plate_code}
-              </button>
-            )}
           </motion.div>
         </div>
 

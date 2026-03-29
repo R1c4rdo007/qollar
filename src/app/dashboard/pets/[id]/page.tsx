@@ -21,11 +21,12 @@ export default async function PetDetailPage({
 
   if (!pet) notFound();
 
-  const [{ data: scanEvents }, { data: vaccines }, { data: linkedPlate }] = await Promise.all([
+  const [{ data: scanEvents }, { data: vaccines }, { data: linkedPlates }] = await Promise.all([
     supabase.from("scan_events").select("*").eq("pet_id", id).order("created_at", { ascending: false }).limit(10),
     supabase.from("vaccines").select("*").eq("pet_id", id).order("next_due_date", { ascending: true }),
-    supabase.from("qr_plates").select("id, plate_code").eq("pet_id", id).eq("status", "active").maybeSingle(),
+    // Fetch ALL plates linked to this pet (any status) — no extra filter so RLS doesn't block
+    supabase.from("qr_plates").select("id, plate_code, status").eq("pet_id", id).order("activated_at", { ascending: false }),
   ]);
 
-  return <PetDetailClient pet={pet} scanEvents={scanEvents || []} vaccines={vaccines || []} linkedPlate={linkedPlate || null} />;
+  return <PetDetailClient pet={pet} scanEvents={scanEvents || []} vaccines={vaccines || []} linkedPlates={linkedPlates || []} />;
 }
