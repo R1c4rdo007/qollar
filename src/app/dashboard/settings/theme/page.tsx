@@ -49,6 +49,16 @@ const THEMES = [
     text: "#FDF4FF",
   },
   {
+    id: "pastel",
+    name: "Pastel",
+    description: "Fondo blanco + violeta y rosa pastel",
+    bg: "#F5F0FF",
+    surface: "#FFFFFF",
+    primary: "#7C3AED",
+    secondary: "#F472B6",
+    text: "#1E0D40",
+  },
+  {
     id: "contrast",
     name: "Contraste",
     description: "Negro puro + azul eléctrico",

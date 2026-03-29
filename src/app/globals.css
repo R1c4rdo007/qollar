@@ -18,7 +18,7 @@
   --glow-secondary: rgba(124, 58, 237, 0.3);
 }
 
-/* ── Tema: Claro (slate azulado más luminoso) ───────────────── */
+/* ── Tema: Claro (azul slate, más luminoso) ─────────────────── */
 [data-theme="light"] {
   --background: #1C1C2E;
   --foreground: #EEF0FF;
@@ -34,6 +34,88 @@
   --glow-primary: rgba(96, 165, 250, 0.3);
   --glow-secondary: rgba(129, 140, 248, 0.3);
 }
+
+/* ── Tema: Pastel (fondo blanco, colores pastel) ────────────── */
+[data-theme="pastel"] {
+  --background: #F5F0FF;
+  --foreground: #1E0D40;
+  --primary: #7C3AED;
+  --primary-light: #9F67FF;
+  --secondary: #EC4899;
+  --secondary-light: #F472B6;
+  --accent: #10B981;
+  --surface: rgba(255, 255, 255, 0.90);
+  --surface-2: rgba(255, 255, 255, 0.70);
+  --border: rgba(124, 58, 237, 0.12);
+  --text-muted: #8B7EC8;
+  --glow-primary: rgba(124, 58, 237, 0.18);
+  --glow-secondary: rgba(236, 72, 153, 0.18);
+  color-scheme: light;
+}
+
+/* Body background for pastel */
+[data-theme="pastel"] body {
+  background: var(--background);
+}
+
+/* Glass → frosted white card with subtle shadow */
+[data-theme="pastel"] .glass {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(124, 58, 237, 0.12) !important;
+  box-shadow: 0 4px 24px rgba(124, 58, 237, 0.07), 0 1px 4px rgba(0,0,0,0.04);
+}
+
+/* Flip white/opacity utilities → black/opacity for contrast on light bg */
+[data-theme="pastel"] .bg-white\/3  { background-color: rgba(0,0,0,0.025) !important; }
+[data-theme="pastel"] .bg-white\/5  { background-color: rgba(0,0,0,0.04)  !important; }
+[data-theme="pastel"] .bg-white\/8  { background-color: rgba(0,0,0,0.055) !important; }
+[data-theme="pastel"] .bg-white\/10 { background-color: rgba(0,0,0,0.07)  !important; }
+[data-theme="pastel"] .bg-white\/15 { background-color: rgba(0,0,0,0.09)  !important; }
+[data-theme="pastel"] .bg-white\/20 { background-color: rgba(0,0,0,0.12)  !important; }
+
+[data-theme="pastel"] .hover\:bg-white\/5:hover  { background-color: rgba(0,0,0,0.04) !important; }
+[data-theme="pastel"] .hover\:bg-white\/8:hover  { background-color: rgba(0,0,0,0.05) !important; }
+[data-theme="pastel"] .hover\:bg-white\/10:hover { background-color: rgba(0,0,0,0.07) !important; }
+
+/* Flip white/opacity borders */
+[data-theme="pastel"] .border-white\/5  { border-color: rgba(0,0,0,0.05) !important; }
+[data-theme="pastel"] .border-white\/8  { border-color: rgba(0,0,0,0.08) !important; }
+[data-theme="pastel"] .border-white\/10 { border-color: rgba(0,0,0,0.10) !important; }
+[data-theme="pastel"] .border-white\/15 { border-color: rgba(0,0,0,0.12) !important; }
+[data-theme="pastel"] .border-white\/20 { border-color: rgba(0,0,0,0.15) !important; }
+
+/* Text overrides for hardcoded Tailwind colors */
+[data-theme="pastel"] .text-white          { color: #1E0D40 !important; }
+[data-theme="pastel"] .text-\[\#F8F4FF\]   { color: #1E0D40 !important; }
+[data-theme="pastel"] .text-\[\#9B8FC0\]   { color: #8B7EC8 !important; }
+[data-theme="pastel"] .hover\:text-white:hover { color: #1E0D40 !important; }
+
+/* Dark gradient surfaces → light pastel */
+[data-theme="pastel"] .from-\[\#241840\]   { --tw-gradient-from:   #EDE5FF !important; }
+[data-theme="pastel"] .to-\[\#1A1230\]     { --tw-gradient-to:     #F5F0FF !important; }
+
+/* Input, textarea, select fields */
+[data-theme="pastel"] input:not([type="file"]),
+[data-theme="pastel"] textarea,
+[data-theme="pastel"] select {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.10) !important;
+  color: #1E0D40 !important;
+}
+[data-theme="pastel"] input::placeholder,
+[data-theme="pastel"] textarea::placeholder {
+  color: rgba(139, 126, 200, 0.6) !important;
+}
+
+/* Bottom nav: solid white */
+[data-theme="pastel"] nav.bottom-nav {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+/* Scrollbar */
+[data-theme="pastel"] ::-webkit-scrollbar-track { background: #f5f0ff; }
+[data-theme="pastel"] ::-webkit-scrollbar-thumb { background: #9F67FF; }
 
 /* ── Tema: Bosque (verde esmeralda) ─────────────────────────── */
 [data-theme="forest"] {
