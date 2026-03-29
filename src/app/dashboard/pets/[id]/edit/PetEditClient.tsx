@@ -4,16 +4,18 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Plus, Trash2, CheckCircle2, Circle,
-  Syringe, Heart, Camera, FileText, PawPrint
+  Syringe, Heart, Camera, FileText, PawPrint, Upload, X
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Pet, Vaccine } from "@/types";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import toast from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
+import Image from "next/image";
 
 type Species = "dog" | "cat" | "other";
 type TabId = "basico" | "salud" | "vacunas" | "galeria" | "resena";
@@ -48,6 +50,10 @@ export default function PetEditClient({ pet, userId }: { pet: Pet; userId: strin
   const [activeTab, setActiveTab] = useState<TabId>("basico");
   const [vaccines, setVaccines] = useState<VaccineEntry[]>([]);
   const [deletedVaccineIds, setDeletedVaccineIds] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<string[]>(pet.photos || []);
+  const [newPhotoFiles, setNewPhotoFiles] = useState<File[]>([]);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     name: pet.name,
@@ -102,6 +108,23 @@ export default function PetEditClient({ pet, userId }: { pet: Pet; userId: strin
   function removeVaccine(id: string, isNew?: boolean) {
     setVaccines((prev) => prev.filter((v) => v.id !== id));
     if (!isNew) setDeletedVaccineIds((prev) => [...prev, id]);
+  }
+
+  function handlePhotoFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    const remaining = 5 - photos.length - newPhotoFiles.length;
+    if (remaining <= 0) { toast.error("Máximo 5 fotos"); return; }
+    const toAdd = files.slice(0, remaining);
+    setNewPhotoFiles((prev) => [...prev, ...toAdd]);
+    e.target.value = "";
+  }
+
+  function removeExistingPhoto(url: string) {
+    setPhotos((prev) => prev.filter((p) => p !== url));
+  }
+
+  function removeNewPhoto(idx: number) {
+    setNewPhotoFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -161,6 +184,29 @@ export default function PetEditClient({ pet, userId }: { pet: Pet; userId: strin
           is_given: v.is_given,
           notes: v.notes || null,
         }).eq("id", v.id);
+      }
+
+      // Upload new photos
+      let finalPhotos = [...photos];
+      if (newPhotoFiles.length > 0) {
+        setPhotoUploading(true);
+        const uploaded: string[] = [];
+        for (const file of newPhotoFiles) {
+          const ext = file.name.split(".").pop();
+          const path = `${userId}/${pet.id}/${uuidv4()}.${ext}`;
+          const { error: upErr } = await supabase.storage.from("pet-photos").upload(path, file);
+          if (!upErr) {
+            const { data: urlData } = supabase.storage.from("pet-photos").getPublicUrl(path);
+            uploaded.push(urlData.publicUrl);
+          }
+        }
+        finalPhotos = [...photos, ...uploaded];
+        setPhotoUploading(false);
+      }
+      if (finalPhotos.length !== (pet.photos || []).length || newPhotoFiles.length > 0) {
+        await supabase.from("pets").update({ photos: finalPhotos }).eq("id", pet.id).eq("owner_id", userId);
+        setPhotos(finalPhotos);
+        setNewPhotoFiles([]);
       }
 
       toast.success("Cambios guardados");
@@ -323,20 +369,80 @@ export default function PetEditClient({ pet, userId }: { pet: Pet; userId: strin
             {activeTab === "galeria" && (
               <motion.div key="galeria" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
                 <div className="glass rounded-3xl p-6">
-                  <h2 className="font-semibold text-white flex items-center gap-2 mb-3"><Camera size={16} className="text-[#FF6B35]" />Galería de fotos</h2>
-                  <p className="text-[#9B8FC0] text-xs mb-4">Para cambiar fotos, edita desde la página de detalle de la mascota.</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-semibold text-white flex items-center gap-2"><Camera size={16} className="text-[#FF6B35]" />Galería de fotos</h2>
+                    <span className="text-xs text-[#9B8FC0]">{photos.length + newPhotoFiles.length}/5</span>
+                  </div>
+
                   <div className="grid grid-cols-3 gap-2">
-                    {pet.photos?.map((url, i) => (
-                      <div key={i} className="relative aspect-square rounded-xl overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={url} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
+                    {/* Existing photos */}
+                    {photos.map((url, i) => (
+                      <div key={url} className="relative aspect-square rounded-xl overflow-hidden group">
+                        <Image src={url} alt={`foto ${i + 1}`} fill className="object-cover" />
                         {i === 0 && <div className="absolute bottom-1 left-1 bg-[#FF6B35] text-white text-[8px] px-1 py-0.5 rounded font-medium">Principal</div>}
+                        <button
+                          type="button"
+                          onClick={() => removeExistingPhoto(url)}
+                          className="absolute top-1 right-1 w-6 h-6 bg-black/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={12} className="text-white" />
+                        </button>
                       </div>
                     ))}
-                    {(!pet.photos || pet.photos.length === 0) && <p className="text-[#9B8FC0] text-sm col-span-3 text-center py-6">Sin fotos aún</p>}
+
+                    {/* New photos (preview) */}
+                    {newPhotoFiles.map((file, i) => (
+                      <div key={i} className="relative aspect-square rounded-xl overflow-hidden group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={URL.createObjectURL(file)} alt="nueva foto" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-[#FF6B35]/20 flex items-center justify-center">
+                          <span className="text-[8px] text-white bg-[#FF6B35] px-1 py-0.5 rounded font-medium">Nueva</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeNewPhoto(i)}
+                          className="absolute top-1 right-1 w-6 h-6 bg-black/70 rounded-full flex items-center justify-center"
+                        >
+                          <X size={12} className="text-white" />
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Upload button */}
+                    {photos.length + newPhotoFiles.length < 5 && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="aspect-square rounded-xl border-2 border-dashed border-white/15 flex flex-col items-center justify-center gap-1 hover:border-[#FF6B35]/50 hover:bg-white/3 transition-colors"
+                      >
+                        <Upload size={18} className="text-[#9B8FC0]" />
+                        <span className="text-[9px] text-[#9B8FC0]">Agregar</span>
+                      </button>
+                    )}
                   </div>
+
+                  {photos.length + newPhotoFiles.length === 0 && (
+                    <p className="text-[#9B8FC0] text-sm text-center py-4">Sin fotos aún</p>
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handlePhotoFileSelect}
+                  />
+
+                  {newPhotoFiles.length > 0 && (
+                    <p className="text-xs text-[#9B8FC0] mt-3">
+                      {newPhotoFiles.length} foto{newPhotoFiles.length > 1 ? "s" : ""} nueva{newPhotoFiles.length > 1 ? "s" : ""} — se subirán al guardar
+                    </p>
+                  )}
                 </div>
-                <Button type="submit" loading={loading} fullWidth size="lg">Guardar cambios</Button>
+                <Button type="submit" loading={loading || photoUploading} fullWidth size="lg">
+                  {photoUploading ? "Subiendo fotos..." : "Guardar cambios"}
+                </Button>
               </motion.div>
             )}
 
