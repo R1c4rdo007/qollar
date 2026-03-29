@@ -12,9 +12,19 @@ export default async function EditPetPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: pet } = await supabase
-    .from("pets").select("*").eq("id", id).eq("owner_id", user.id).single();
+  const [{ data: pet }, { data: profile }] = await Promise.all([
+    supabase.from("pets").select("*").eq("id", id).eq("owner_id", user.id).single(),
+    supabase.from("profiles").select("full_name, phone").eq("id", user.id).single(),
+  ]);
+
   if (!pet) notFound();
 
-  return <PetEditClient pet={pet} userId={user.id} />;
+  return (
+    <PetEditClient
+      pet={pet}
+      userId={user.id}
+      ownerPhone={profile?.phone || ""}
+      ownerName={profile?.full_name || ""}
+    />
+  );
 }

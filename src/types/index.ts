@@ -4,6 +4,10 @@ export interface Profile {
   avatar_url: string | null;
   phone: string | null;
   email: string;
+  age: number | null;
+  gender: "male" | "female" | "other" | null;
+  bio: string | null;
+  theme_preference: string;
   points?: number;
   is_admin?: boolean;
   created_at: string;

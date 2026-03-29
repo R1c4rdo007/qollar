@@ -19,6 +19,8 @@ import { v4 as uuidv4 } from "uuid";
 
 interface PetFormProps {
   userId: string;
+  ownerPhone?: string;
+  ownerName?: string;
 }
 
 type Species = "dog" | "cat" | "other";
@@ -47,7 +49,7 @@ const speciesOptions: { value: Species; emoji: string; label: string }[] = [
   { value: "other", emoji: "🐾", label: "Otro" },
 ];
 
-export default function PetForm({ userId }: PetFormProps) {
+export default function PetForm({ userId, ownerPhone = "", ownerName = "" }: PetFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
@@ -76,11 +78,11 @@ export default function PetForm({ userId }: PetFormProps) {
     special_diet: "",
     vet_name: "",
     vet_phone: "",
-    // Reseña / contacto
+    // Reseña / contacto — pre-filled from owner profile
     description: "",
     personality_notes: "",
-    contact_phone: "",
-    whatsapp: "",
+    contact_phone: ownerPhone,
+    whatsapp: ownerPhone,
     reward_description: "",
   });
 
@@ -487,16 +489,16 @@ export default function PetForm({ userId }: PetFormProps) {
                         </button>
                       </div>
                       <Input label="Nombre de la vacuna *" placeholder="Ej. Parvovirus, Rabia, Bordetella..." value={v.name} onChange={(e) => updateVaccine(v.id, "name", e.target.value)} />
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs font-medium text-[#9B8FC0]">Fecha aplicada</label>
                           <input type="date" value={v.date_given} onChange={(e) => updateVaccine(v.id, "date_given", e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-[#F8F4FF] text-sm focus:border-[#FF6B35]/60 focus:outline-none" />
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-[#F8F4FF] text-sm focus:border-[color:var(--primary)]/60 focus:outline-none" />
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs font-medium text-[#9B8FC0]">Próxima dosis</label>
                           <input type="date" value={v.next_due_date} onChange={(e) => updateVaccine(v.id, "next_due_date", e.target.value)}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-[#F8F4FF] text-sm focus:border-[#FF6B35]/60 focus:outline-none" />
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-[#F8F4FF] text-sm focus:border-[color:var(--primary)]/60 focus:outline-none" />
                         </div>
                       </div>
                       <div className="flex items-center gap-3">

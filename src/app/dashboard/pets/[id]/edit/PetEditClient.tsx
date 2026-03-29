@@ -7,7 +7,6 @@ import {
   Syringe, Heart, Camera, FileText, PawPrint, Upload, X
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Pet, Vaccine } from "@/types";
@@ -44,8 +43,7 @@ const speciesOptions = [
   { value: "other" as Species, emoji: "🐾", label: "Otro" },
 ];
 
-export default function PetEditClient({ pet, userId }: { pet: Pet; userId: string }) {
-  const router = useRouter();
+export default function PetEditClient({ pet, userId, ownerPhone = "", ownerName: _ownerName = "" }: { pet: Pet; userId: string; ownerPhone?: string; ownerName?: string }) {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("basico");
   const [vaccines, setVaccines] = useState<VaccineEntry[]>([]);
@@ -71,8 +69,8 @@ export default function PetEditClient({ pet, userId }: { pet: Pet; userId: strin
     vet_phone: pet.vet_phone || "",
     description: pet.description || "",
     personality_notes: pet.personality_notes || "",
-    contact_phone: pet.contact_phone || "",
-    whatsapp: pet.whatsapp || "",
+    contact_phone: pet.contact_phone || ownerPhone,
+    whatsapp: pet.whatsapp || ownerPhone,
     reward_description: pet.reward_description || "",
   });
 
@@ -209,9 +207,7 @@ export default function PetEditClient({ pet, userId }: { pet: Pet; userId: strin
         setNewPhotoFiles([]);
       }
 
-      toast.success("Cambios guardados");
-      router.push(`/dashboard/pets/${pet.id}`);
-      router.refresh();
+      toast.success("Cambios guardados ✓");
     } catch {
       toast.error("Error al guardar");
     } finally {
@@ -344,14 +340,14 @@ export default function PetEditClient({ pet, userId }: { pet: Pet; userId: strin
                         <button type="button" onClick={() => removeVaccine(v.id, v.isNew)} className="text-[#9B8FC0] hover:text-red-400"><Trash2 size={14} /></button>
                       </div>
                       <Input label="Nombre *" placeholder="Ej. Parvovirus, Rabia..." value={v.name} onChange={(e) => updateVaccine(v.id, "name", e.target.value)} />
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs font-medium text-[#9B8FC0]">Fecha aplicada</label>
-                          <input type="date" value={v.date_given} onChange={(e) => updateVaccine(v.id, "date_given", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-[#F8F4FF] text-sm focus:border-[#FF6B35]/60 focus:outline-none" />
+                          <input type="date" value={v.date_given} onChange={(e) => updateVaccine(v.id, "date_given", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-[#F8F4FF] text-sm focus:border-[color:var(--primary)]/60 focus:outline-none" />
                         </div>
                         <div className="flex flex-col gap-1.5">
                           <label className="text-xs font-medium text-[#9B8FC0]">Próxima dosis</label>
-                          <input type="date" value={v.next_due_date} onChange={(e) => updateVaccine(v.id, "next_due_date", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-[#F8F4FF] text-sm focus:border-[#FF6B35]/60 focus:outline-none" />
+                          <input type="date" value={v.next_due_date} onChange={(e) => updateVaccine(v.id, "next_due_date", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-[#F8F4FF] text-sm focus:border-[color:var(--primary)]/60 focus:outline-none" />
                         </div>
                       </div>
                       <button type="button" onClick={() => updateVaccine(v.id, "is_given", !v.is_given)}

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Plus, QrCode, LogOut, AlertCircle, CheckCircle, Bell, Star, Users, Stethoscope, ShieldCheck } from "lucide-react";
+import { Plus, QrCode, LogOut, AlertCircle, CheckCircle, Bell, Star, Users, Stethoscope, ShieldCheck, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -90,13 +90,21 @@ export default function DashboardClient({ pets, profile, user, unreadCount }: Pr
               )}
             </Link>
 
-            {/* Avatar */}
-            <div className="hidden sm:flex items-center gap-2">
-              {profile?.avatar_url && (
-                <Image src={profile.avatar_url} alt={displayName} width={30} height={30} className="rounded-full" />
+            {/* Avatar + Profile link */}
+            <Link href="/dashboard/profile" className="hidden sm:flex items-center gap-2 p-1.5 rounded-xl hover:bg-white/5">
+              {profile?.avatar_url ? (
+                <Image src={profile.avatar_url} alt={displayName} width={28} height={28} className="rounded-full" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[color:var(--secondary)] to-[color:var(--primary)] flex items-center justify-center text-white text-xs font-bold">
+                  {displayName[0]?.toUpperCase()}
+                </div>
               )}
               <span className="text-sm text-[#9B8FC0]">{displayName.split(" ")[0]}</span>
-            </div>
+            </Link>
+
+            <Link href="/dashboard/settings/theme" className="p-2 rounded-xl hover:bg-white/5 text-[#9B8FC0] hover:text-[color:var(--primary)] transition-colors" title="Paleta de colores">
+              <Settings size={18} />
+            </Link>
 
             <button onClick={handleLogout} className="p-2 rounded-xl hover:bg-white/5 text-[#9B8FC0] hover:text-white">
               <LogOut size={18} />
@@ -224,9 +232,15 @@ export default function DashboardClient({ pets, profile, user, unreadCount }: Pr
             {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-[#FF6B35] rounded-full text-white text-[8px] flex items-center justify-center font-bold">{unreadCount}</span>}
             <span className="text-[9px] font-medium">Alertas</span>
           </Link>
-          <Link href="/points" className="flex flex-col items-center gap-1 text-[#9B8FC0] hover:text-white">
-            <Star size={20} />
-            <span className="text-[9px] font-medium">Puntos</span>
+          <Link href="/dashboard/profile" className="flex flex-col items-center gap-1 text-[#9B8FC0] hover:text-white">
+            {profile?.avatar_url ? (
+              <Image src={profile.avatar_url} alt={displayName} width={20} height={20} className="rounded-full" />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[color:var(--secondary)] to-[color:var(--primary)] flex items-center justify-center text-white text-[9px] font-bold">
+                {displayName[0]?.toUpperCase()}
+              </div>
+            )}
+            <span className="text-[9px] font-medium">Perfil</span>
           </Link>
         </div>
       </nav>

@@ -69,6 +69,8 @@ export default function RootLayout({
   return (
     <html lang="es" className="h-full antialiased">
       <head>
+        {/* Apply saved theme before first paint to avoid flash */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('qollar-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();` }} />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <link rel="icon" href="/icons/icon-192.png" type="image/png" />
         <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />

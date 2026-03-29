@@ -30,9 +30,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary:
-        "bg-gradient-to-r from-[#FF6B35] to-[#FF8C5A] text-white shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:brightness-110 focus-visible:ring-orange-500",
+        "bg-gradient-to-r from-primary to-primary-light text-white shadow-lg shadow-[var(--glow-primary)] hover:brightness-110 focus-visible:ring-[var(--primary)]",
       secondary:
-        "bg-gradient-to-r from-[#7C3AED] to-[#9F67FF] text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:brightness-110 focus-visible:ring-purple-500",
+        "bg-gradient-to-r from-secondary to-secondary-light text-white shadow-lg shadow-[var(--glow-secondary)] hover:brightness-110 focus-visible:ring-[var(--secondary)]",
       ghost:
         "bg-white/5 text-[#F8F4FF] border border-white/10 hover:bg-white/10 focus-visible:ring-white/20",
       danger:

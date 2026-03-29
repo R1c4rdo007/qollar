@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-:root {
+/* ── Default theme: Oscuro (deep purple + orange) ──────────── */
+:root,
+[data-theme="dark"] {
   --background: #0F0A1E;
   --foreground: #F8F4FF;
   --primary: #FF6B35;
@@ -12,13 +14,85 @@
   --surface-2: #241840;
   --border: rgba(255, 255, 255, 0.08);
   --text-muted: #9B8FC0;
+  --glow-primary: rgba(255, 107, 53, 0.3);
+  --glow-secondary: rgba(124, 58, 237, 0.3);
+}
+
+/* ── Tema: Claro (slate azulado más luminoso) ───────────────── */
+[data-theme="light"] {
+  --background: #1C1C2E;
+  --foreground: #EEF0FF;
+  --primary: #60A5FA;
+  --primary-light: #93C5FD;
+  --secondary: #818CF8;
+  --secondary-light: #A5B4FC;
+  --accent: #34D399;
+  --surface: #252545;
+  --surface-2: #2E2E5A;
+  --border: rgba(255, 255, 255, 0.12);
+  --text-muted: #94A3B8;
+  --glow-primary: rgba(96, 165, 250, 0.3);
+  --glow-secondary: rgba(129, 140, 248, 0.3);
+}
+
+/* ── Tema: Bosque (verde esmeralda) ─────────────────────────── */
+[data-theme="forest"] {
+  --background: #061410;
+  --foreground: #ECFDF5;
+  --primary: #10B981;
+  --primary-light: #34D399;
+  --secondary: #0D9488;
+  --secondary-light: #2DD4BF;
+  --accent: #F59E0B;
+  --surface: #0A1F18;
+  --surface-2: #112B22;
+  --border: rgba(52, 211, 153, 0.1);
+  --text-muted: #6EE7B7;
+  --glow-primary: rgba(16, 185, 129, 0.3);
+  --glow-secondary: rgba(13, 148, 136, 0.3);
+}
+
+/* ── Tema: Rosado (plum + pink) ─────────────────────────────── */
+[data-theme="rose"] {
+  --background: #120810;
+  --foreground: #FDF4FF;
+  --primary: #EC4899;
+  --primary-light: #F472B6;
+  --secondary: #8B5CF6;
+  --secondary-light: #A78BFA;
+  --accent: #F43F5E;
+  --surface: #1C0A18;
+  --surface-2: #280E22;
+  --border: rgba(244, 114, 182, 0.1);
+  --text-muted: #D1A8C4;
+  --glow-primary: rgba(236, 72, 153, 0.3);
+  --glow-secondary: rgba(139, 92, 246, 0.3);
+}
+
+/* ── Tema: Contraste (negro + azul eléctrico) ───────────────── */
+[data-theme="contrast"] {
+  --background: #000000;
+  --foreground: #FFFFFF;
+  --primary: #00D4FF;
+  --primary-light: #38BDF8;
+  --secondary: #A855F7;
+  --secondary-light: #C084FC;
+  --accent: #22C55E;
+  --surface: #0A0A0A;
+  --surface-2: #141414;
+  --border: rgba(0, 212, 255, 0.15);
+  --text-muted: #94A3B8;
+  --glow-primary: rgba(0, 212, 255, 0.35);
+  --glow-secondary: rgba(168, 85, 247, 0.3);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
   --color-secondary: var(--secondary);
+  --color-secondary-light: var(--secondary-light);
   --color-accent: var(--accent);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -61,12 +135,30 @@ body {
   border-radius: 99px;
 }
 
-/* Gradient text utility */
+/* Gradient text utility — uses theme CSS vars */
 .gradient-text {
-  background: linear-gradient(135deg, #FF6B35, #9F67FF);
+  background: linear-gradient(135deg, var(--primary), var(--secondary-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* ── Skeleton loading animation ─────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.10) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.75rem;
 }
 
 /* Glass card — blur reduced 20→14px for faster GPU compositing on mid-range phones.
@@ -99,13 +191,13 @@ nav.bottom-nav {
   -webkit-transform: translateZ(0);
 }
 
-/* Glow effects */
+/* Glow effects — use theme vars */
 .glow-orange {
-  box-shadow: 0 0 30px rgba(255, 107, 53, 0.3);
+  box-shadow: 0 0 30px var(--glow-primary);
 }
 
 .glow-purple {
-  box-shadow: 0 0 30px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 0 30px var(--glow-secondary);
 }
 
 /* Input styles */
