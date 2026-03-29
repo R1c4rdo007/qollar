@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, QrCode, LogOut, AlertCircle, CheckCircle, Bell, Star, Users, Stethoscope, ShieldCheck, Settings } from "lucide-react";
+import { Plus, QrCode, LogOut, AlertCircle, CheckCircle, Bell, Star, Users, Stethoscope, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -28,6 +29,15 @@ const NAV = [
 export default function DashboardClient({ pets, profile, user, unreadCount }: Props) {
   const router = useRouter();
   const admin = isAdmin(profile?.email || user.email);
+
+  // Sync theme from Supabase profile so all devices/sessions stay in sync
+  useEffect(() => {
+    const serverTheme = profile?.theme_preference;
+    if (serverTheme && serverTheme !== "dark") {
+      document.documentElement.setAttribute("data-theme", serverTheme);
+      localStorage.setItem("qollar-theme", serverTheme);
+    }
+  }, [profile?.theme_preference]);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -100,10 +110,6 @@ export default function DashboardClient({ pets, profile, user, unreadCount }: Pr
                 </div>
               )}
               <span className="text-sm text-[#9B8FC0]">{displayName.split(" ")[0]}</span>
-            </Link>
-
-            <Link href="/dashboard/settings/theme" className="p-2 rounded-xl hover:bg-white/5 text-[#9B8FC0] hover:text-[color:var(--primary)] transition-colors" title="Paleta de colores">
-              <Settings size={18} />
             </Link>
 
             <button onClick={handleLogout} className="p-2 rounded-xl hover:bg-white/5 text-[#9B8FC0] hover:text-white">
